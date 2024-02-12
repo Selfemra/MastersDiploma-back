@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <header>
+        Admin panel
+    </header>
+
+    <main>
+        <h1>Оберіть сховище</h1>
+        <section class="select__container">
+            <section>
+                <h2>Регіон</h2>
+                <select name="region" id="region">
+                </select>
+            </section>
+            
+            <section>
+                <h2>Місто/село</h2>
+                <select name="city" id="city" disabled>
+                </select>
+            </section>
+    
+            <section>
+                <h2>Вулиця</h2>
+                <select name="street" id="street" disabled>
+                </select>
+            </section>
+    
+            <section>
+                <h2>Сховище</h2>
+                <select name="vault" id="vault" disabled onchange="handleVaultSelection()">
+                </select>
+            </section>
+        </section>
+
+        <div id="counter"></div>
+
+        <section class="" id="people-container">
+            
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/admin_fetch.js') }}"></script>
+    <script>
+        // Define handleVaultSelection function
+        async function handleVaultSelection() {
+            const region = document.getElementById('region').value;
+            const city = document.getElementById('city').value;
+            const street = document.getElementById('street').value;
+            const vault = document.getElementById('vault').value;
+        
+            // Call fetchPeople function and use the result as needed
+            const people = await fetchPeople(region, city, street, vault);
+            
+            // Implement your logic to display or update the people list
+            console.log('Fetched people:', people);
+
+            const people_container = document.getElementById('people-container');
+
+            // Clear existing children
+            people_container.innerHTML = '';
+            document.getElementById('counter').innerHTML = '<h2>Кількість людей:' + people.length + '</h2>';
+
+            for (const person of people) {
+                // Create a new <div> element for each person
+                const personDiv = document.createElement('div');
+                
+                // If a photo URL is available, create an <img> element and set its src attribute
+                if (person.photo_url) {
+                    const imgElement = document.createElement('img');
+                    console.log(person.photo_url);
+                    imgElement.src = '{{ url_for("static", filename="img/") }}' + person.photo_url.split('\\')[1];
+                    console.log(imgElement.src);
+                    // You can customize the image size or other attributes as needed
+                    personDiv.appendChild(imgElement);
+                }
+
+                // Append the person's div to the people container
+                people_container.appendChild(personDiv);
+            }
+
+        }
+        
+        // Add event listener using modern approach
+        document.getElementById('vault').addEventListener('change', handleVaultSelection);
+    
+        async function fetchPeople(region, city, street, vault) {
+            const endpoint = `/admin/people/${encodeURIComponent(region)}/${encodeURIComponent(city)}/${encodeURIComponent(street)}/${encodeURIComponent(vault)}`;
+            
+            try {
+                const response = await fetch(endpoint);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch people: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                return data.people;
+            } catch (error) {
+                console.error('Error fetching people:', error.message);
+                return []; // Return an empty array or handle the error as needed
+            }
+        }
+    </script>
+</body>
+</html>
